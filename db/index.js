@@ -27,12 +27,10 @@ async function createUser({ username, password, name, location }) {
 }
 
 async function updateUser(id, fields = {}) {
-  // build the set string
   const setString = Object.keys(fields)
     .map((key, index) => `"${key}"=$${index + 1}`)
     .join(", ");
 
-  // return early if this is called without fields
   if (setString.length === 0) {
     return;
   }
@@ -91,9 +89,6 @@ async function getUserById(userId) {
   }
 }
 
-/**
- * POST Methods
- */
 
 async function createPost({ authorId, title, content, tags = [] }) {
   try {
@@ -198,6 +193,13 @@ async function getPostById(postId) {
     `,
       [postId]
     );
+
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId",
+      };
+    }
 
     const { rows: tags } = await client.query(
       `
@@ -356,11 +358,16 @@ async function getAllTags() {
 
 async function getUserByUsername(username) {
   try {
-    const { rows: [user] } = await client.query(`
+    const {
+      rows: [user],
+    } = await client.query(
+      `
       SELECT *
       FROM users
       WHERE username=$1;
-    `, [username]);
+    `,
+      [username]
+    );
 
     return user;
   } catch (error) {
@@ -383,5 +390,6 @@ module.exports = {
   getAllTags,
   createPostTag,
   addTagsToPost,
-  getUserByUsername
+  getUserByUsername,
+  getPostById,
 };
